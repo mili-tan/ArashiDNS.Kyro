@@ -5,13 +5,14 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using Timer = System.Timers.Timer;
 
 namespace ArashiDNS.Kyro
 {
     class Program
     {
         public static Config FullConfig;
-        public static System.Timers.Timer CheckTimer;
+        public static Timer CheckTimer;
 
         static async Task Main(string[] args)
         {
@@ -74,7 +75,7 @@ namespace ArashiDNS.Kyro
 
         static async Task ProcessDomain(DomainConfig domainConfig)
         {
-            Console.WriteLine($"Check: {domainConfig.SubDomain}");
+            Console.WriteLine($"- Check: {domainConfig.SubDomain}");
 
             var client = new CloudFlareClient(FullConfig.ApiToken);
             var haName = string.IsNullOrWhiteSpace(domainConfig.HADomain)
@@ -88,7 +89,7 @@ namespace ArashiDNS.Kyro
 
             if (!haRecords.Any())
             {
-                Console.WriteLine($"⚠  HA NotFound: {haName} / {domainConfig.SubDomain}");
+                Console.WriteLine($"    ⚠  HA NotFound: {haName} / {domainConfig.SubDomain}");
                 return;
             }
 
@@ -98,17 +99,14 @@ namespace ArashiDNS.Kyro
                 if (await IsRecordAccessible(record))
                 {
                     accessibleRecords.Add(record);
-                    Console.WriteLine($"✓ {record.Name} ({record.Content}) UP");
+                    Console.WriteLine($"  - ✓ {record.Name} ({record.Content}) UP");
                 }
-                else
-                {
-                    Console.WriteLine($"✗ {record.Name} ({record.Content}) DOWN");
-                }
+                else Console.WriteLine($"  - ✗ {record.Name} ({record.Content}) DOWN");
             }
 
             if (!accessibleRecords.Any())
             {
-                Console.WriteLine($"⚠  No Accessible HA: {haName} / {domainConfig.SubDomain}");
+                Console.WriteLine($"    ⚠  No Accessible HA: {haName} / {domainConfig.SubDomain}");
                 return;
             }
 
@@ -122,14 +120,14 @@ namespace ArashiDNS.Kyro
                 mainRecord.Content == bestRecord.Content &&
                 mainRecord.Type == bestRecord.Type)
             {
-                Console.WriteLine($"No Update Needed : {domainConfig.SubDomain} / {bestRecord.Content}");
+                Console.WriteLine($"    No Update Needed : {domainConfig.SubDomain} / {bestRecord.Content}");
                 return;
             }
 
             if (mainRecord != null)
             {
                 await client.Zones.DnsRecords.DeleteAsync(domainConfig.ZoneId, mainRecord.Id);
-                Console.WriteLine($"Deleted Old Record : {domainConfig.SubDomain}");
+                Console.WriteLine($"    - Deleted Old Record : {domainConfig.SubDomain}");
             }
 
             var newRecord = new NewDnsRecord()
@@ -142,7 +140,7 @@ namespace ArashiDNS.Kyro
             };
 
             await client.Zones.DnsRecords.AddAsync(domainConfig.ZoneId, newRecord);
-            Console.WriteLine($"Updated {domainConfig.SubDomain} : {bestRecord.Content} ({bestRecord.Type})");
+            Console.WriteLine($"    - Updated {domainConfig.SubDomain} : {bestRecord.Content} ({bestRecord.Type})");
         }
 
         static async Task<bool> IsRecordAccessible(DnsRecord record)
