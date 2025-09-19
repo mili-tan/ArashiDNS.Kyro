@@ -28,7 +28,7 @@ namespace ArashiDNS.Kyro
                 $"Interval: {FullConfig.CheckInterval}ms, Timeout: {FullConfig.Timeout}ms, Port: {FullConfig.CheckPort}");
             await CheckAllDomains();
 
-            CheckTimer = new System.Timers.Timer(FullConfig.CheckInterval);
+            CheckTimer = new Timer(FullConfig.CheckInterval);
             CheckTimer.Elapsed += async (sender, e) => await CheckAllDomains();
             CheckTimer.Start();
 
@@ -75,6 +75,7 @@ namespace ArashiDNS.Kyro
 
         static async Task ProcessDomain(DomainConfig domainConfig)
         {
+            if (string.IsNullOrWhiteSpace(domainConfig.SubDomain)) return;
             Console.WriteLine($"- Check: {domainConfig.SubDomain}");
 
             var client = new CloudFlareClient(FullConfig.ApiToken);
