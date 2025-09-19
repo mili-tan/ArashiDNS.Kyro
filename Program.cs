@@ -1,38 +1,41 @@
-﻿using System.Net.Sockets;
-using System.Net;
-using System.Text.Json;
-using CloudFlare.Client;
+﻿using CloudFlare.Client;
 using CloudFlare.Client.Api.Zones.DnsRecord;
 using CloudFlare.Client.Enumerators;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Text.Json;
 
 namespace ArashiDNS.Kyro
 {
     class Program
     {
-        private static Config config;
-        private static System.Timers.Timer timer;
+        public static Config FullConfig;
+        public static System.Timers.Timer CheckTimer;
 
         static async Task Main(string[] args)
         {
-            config = LoadConfig();
-            if (config == null)
+            Console.OutputEncoding = Encoding.UTF8;
+            FullConfig = LoadConfig();
+            if (FullConfig == null)
             {
-                Console.WriteLine("Failed to load config.");
+                Console.WriteLine("⛔ Load Config Failed");
                 return;
             }
 
-            Console.WriteLine($"Health check started. Interval: {config.CheckInterval}s, Timeout: {config.Timeout}ms, Port: {config.CheckPort}");
+            Console.WriteLine(
+                $"Interval: {FullConfig.CheckInterval}ms, Timeout: {FullConfig.Timeout}ms, Port: {FullConfig.CheckPort}");
             await CheckAllDomains();
 
-            timer = new System.Timers.Timer(config.CheckInterval);
-            timer.Elapsed += async (sender, e) => await CheckAllDomains();
-            timer.Start();
+            CheckTimer = new System.Timers.Timer(FullConfig.CheckInterval);
+            CheckTimer.Elapsed += async (sender, e) => await CheckAllDomains();
+            CheckTimer.Start();
 
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
 
-            timer.Stop();
-            timer.Dispose();
+            CheckTimer.Stop();
+            CheckTimer.Dispose();
         }
 
         static Config LoadConfig()
@@ -44,7 +47,7 @@ namespace ArashiDNS.Kyro
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading config: {ex.Message}");
+                Console.WriteLine($"⚠  Load Config Error: {ex.Message}");
                 return null;
             }
         }
@@ -53,7 +56,7 @@ namespace ArashiDNS.Kyro
         {
             Console.WriteLine($"\n=== Health Check Start {DateTime.Now} ===");
 
-            foreach (var domainConfig in config.Domains)
+            foreach (var domainConfig in FullConfig.Domains)
             {
                 try
                 {
@@ -73,7 +76,7 @@ namespace ArashiDNS.Kyro
         {
             Console.WriteLine($"Check: {domainConfig.SubDomain}");
 
-            var client = new CloudFlareClient(config.ApiToken);
+            var client = new CloudFlareClient(FullConfig.ApiToken);
             var haName = string.IsNullOrWhiteSpace(domainConfig.HADomain)
                 ? $"_ha.{domainConfig.SubDomain}"
                 : domainConfig.HADomain;
@@ -85,7 +88,7 @@ namespace ArashiDNS.Kyro
 
             if (!haRecords.Any())
             {
-                Console.WriteLine($"⚠ HA NotFound: {haName} / {domainConfig.SubDomain}");
+                Console.WriteLine($"⚠  HA NotFound: {haName} / {domainConfig.SubDomain}");
                 return;
             }
 
@@ -105,7 +108,7 @@ namespace ArashiDNS.Kyro
 
             if (!accessibleRecords.Any())
             {
-                Console.WriteLine($"⚠ No Accessible HA: {haName} / {domainConfig.SubDomain}");
+                Console.WriteLine($"⚠  No Accessible HA: {haName} / {domainConfig.SubDomain}");
                 return;
             }
 
@@ -148,28 +151,28 @@ namespace ArashiDNS.Kyro
             {
                 IPAddress[] addresses;
 
-                if (record.Type == DnsRecordType.Cname)
+                switch (record.Type)
                 {
-                    var hostEntry = await Dns.GetHostEntryAsync(record.Content);
-                    addresses = hostEntry.AddressList;
-                }
-                else if (record.Type == DnsRecordType.A)
-                    addresses = [IPAddress.Parse(record.Content)];
-                else
-                    return false;
-
-                if (addresses.Any())
-                {
-
-                    for (int i = 0; i < 4; i++) // Max 4 retries
+                    case DnsRecordType.Cname:
                     {
-                        if (await Tcping(addresses.First(), config.CheckPort, config.Timeout))
-                        {
-                            return true;
-                        }
-
-                        await Task.Delay(300);
+                        var hostEntry = await Dns.GetHostEntryAsync(record.Content);
+                        addresses = hostEntry.AddressList;
+                        break;
                     }
+                    case DnsRecordType.A:
+                        addresses = [IPAddress.Parse(record.Content)];
+                        break;
+                    default:
+                        return false;
+                }
+
+                if (!addresses.Any()) return false;
+                for (var i = 0; i < FullConfig.Retries; i++)
+                {
+                    if (await Tcping(addresses.First(), FullConfig.CheckPort, FullConfig.Timeout))
+                        return true;
+
+                    await Task.Delay(300);
                 }
 
                 return false;
@@ -207,6 +210,7 @@ namespace ArashiDNS.Kyro
         public int CheckInterval { get; set; } = 60 * 1000; // 60s
         public int Timeout { get; set; } = 1000; // 1s
         public int CheckPort { get; set; } = 80;
+        public int Retries { get; set; } = 4;
         public List<DomainConfig> Domains { get; set; }
     }
 
