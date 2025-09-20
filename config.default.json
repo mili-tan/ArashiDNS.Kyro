@@ -1,0 +1,12 @@
+﻿{
+  "ApiToken": "your-cloudflare-api-token",
+  "CheckInterval": 60000,
+  "Timeout": 1000,
+  "CheckPort": 80,
+  "Domains": [
+    {
+      "SubDomain": "x.ollama.party",
+      "ZoneId": "your-zone-id"
+    }
+  ]
+}
