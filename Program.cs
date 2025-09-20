@@ -24,7 +24,7 @@ namespace ArashiDNS.Kyro
                 return;
             }
 
-            Console.WriteLine(
+            if (FullConfig.LogLevel < 2) Console.WriteLine(
                 $"Interval: {FullConfig.CheckInterval}ms, Timeout: {FullConfig.Timeout}ms, Port: {FullConfig.CheckPort}");
             await CheckAllDomains();
 
@@ -32,11 +32,17 @@ namespace ArashiDNS.Kyro
             CheckTimer.Elapsed += async (sender, e) => await CheckAllDomains();
             CheckTimer.Start();
 
-            Console.WriteLine("Press any key to exit...");
-            Console.ReadKey();
+            Console.WriteLine();
+            Console.WriteLine("Application started. Press Ctrl+C / q to shut down.");
+            if (!Console.IsInputRedirected && Console.KeyAvailable)
+            {
+                while (true)
+                    if (Console.ReadKey().KeyChar == 'q')
+                        Environment.Exit(0);
+            }
 
-            CheckTimer.Stop();
-            CheckTimer.Dispose();
+            EventWaitHandle wait = new AutoResetEvent(false);
+            while (true) wait.WaitOne();
         }
 
         static Config LoadConfig()
@@ -55,7 +61,7 @@ namespace ArashiDNS.Kyro
 
         static async Task CheckAllDomains()
         {
-            Console.WriteLine($"\n=== Health Check Start {DateTime.Now} ===");
+            if (FullConfig.LogLevel < 2) Console.WriteLine($"\n=== Health Check Start {DateTime.Now} ===");
 
             foreach (var domainConfig in FullConfig.Domains)
             {
@@ -69,14 +75,14 @@ namespace ArashiDNS.Kyro
                 }
             }
 
-            Console.WriteLine($"=== Health Check End {DateTime.Now} ===\n");
+            if (FullConfig.LogLevel < 1) Console.WriteLine($"=== Health Check End {DateTime.Now} ===\n");
         }
 
 
         static async Task ProcessDomain(DomainConfig domainConfig)
         {
             if (string.IsNullOrWhiteSpace(domainConfig.SubDomain)) return;
-            Console.WriteLine($"- Check: {domainConfig.SubDomain}");
+            if (FullConfig.LogLevel < 2) Console.WriteLine($"- Check: {domainConfig.SubDomain}");
 
             var client = new CloudFlareClient(FullConfig.ApiToken);
             var haName = string.IsNullOrWhiteSpace(domainConfig.HADomain)
@@ -100,9 +106,9 @@ namespace ArashiDNS.Kyro
                 if (await IsRecordAccessible(record))
                 {
                     accessibleRecords.Add(record);
-                    Console.WriteLine($"  - ✓ {record.Name} ({record.Content}) UP");
+                    if (FullConfig.LogLevel < 1) Console.WriteLine($"  - ✓ {record.Name} ({record.Content}) UP");
                 }
-                else Console.WriteLine($"  - ✗ {record.Name} ({record.Content}) DOWN");
+                else if (FullConfig.LogLevel < 1) Console.WriteLine($"  - ✗ {record.Name} ({record.Content}) DOWN");
             }
 
             if (!accessibleRecords.Any())
@@ -131,14 +137,14 @@ namespace ArashiDNS.Kyro
                 mainRecord.Content == bestRecord.Content &&
                 mainRecord.Type == bestRecord.Type)
             {
-                Console.WriteLine($"    No Update Needed : {domainConfig.SubDomain} / {bestRecord.Content}");
+                if (FullConfig.LogLevel < 2) Console.WriteLine($"    No Update Needed : {domainConfig.SubDomain} / {bestRecord.Content}");
                 return;
             }
 
             if (mainRecord != null)
             {
                 await client.Zones.DnsRecords.DeleteAsync(domainConfig.ZoneId, mainRecord.Id);
-                Console.WriteLine($"    - Deleted Old Record : {domainConfig.SubDomain}");
+                if (FullConfig.LogLevel < 1) Console.WriteLine($"    - Deleted Old Record : {domainConfig.SubDomain}");
             }
 
             var newRecord = new NewDnsRecord()
@@ -151,7 +157,7 @@ namespace ArashiDNS.Kyro
             };
 
             await client.Zones.DnsRecords.AddAsync(domainConfig.ZoneId, newRecord);
-            Console.WriteLine($"    - Updated {domainConfig.SubDomain} : {bestRecord.Content} ({bestRecord.Type})");
+            if (FullConfig.LogLevel < 2) Console.WriteLine($"    - Updated {domainConfig.SubDomain} : {bestRecord.Content} ({bestRecord.Type})");
         }
 
         static async Task<bool> IsRecordAccessible(DnsRecord record)
@@ -228,6 +234,7 @@ namespace ArashiDNS.Kyro
         public int Timeout { get; set; } = 1000; // 1s
         public int CheckPort { get; set; } = 80;
         public int Retries { get; set; } = 4;
+        public int LogLevel { get; set; } = 0;
         public List<DomainConfig> Domains { get; set; }
     }
 
