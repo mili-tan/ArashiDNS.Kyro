@@ -86,8 +86,8 @@ namespace ArashiDNS.Kyro
             var dnsRecords = (await client.Zones.DnsRecords.GetAsync(domainConfig.ZoneId,
                 new DnsRecordFilter() { Name = domainConfig.SubDomain })).Result;
             var haRecords = (await client.Zones.DnsRecords.GetAsync(domainConfig.ZoneId,
-                new DnsRecordFilter() { Name = haName })).Result;
-
+                new DnsRecordFilter() {Name = haName})).Result.Where(x =>
+                x.Type is DnsRecordType.A or DnsRecordType.Cname or DnsRecordType.Txt);
             if (!haRecords.Any())
             {
                 Console.WriteLine($"    ⚠  HA NotFound: {haName} / {domainConfig.SubDomain}");
@@ -112,6 +112,16 @@ namespace ArashiDNS.Kyro
             }
 
             var bestRecord = accessibleRecords.OrderByDescending(r => r.Ttl).First();
+            if (bestRecord.Type == DnsRecordType.Txt)
+                bestRecord = new DnsRecord()
+                {
+                    Type = bestRecord.Content.Trim('"').Split(':').First().ToUpper() == "A"
+                        ? DnsRecordType.A
+                        : DnsRecordType.Cname,
+                    Content = bestRecord.Content.Trim('"').Split(':').Last(),
+                    Ttl = bestRecord.Ttl,
+                    Proxied = bestRecord.Proxied
+                };
 
             var mainRecord = dnsRecords
                 .FirstOrDefault(r => r.Name == domainConfig.SubDomain &&
@@ -156,6 +166,14 @@ namespace ArashiDNS.Kyro
                     {
                         var hostEntry = await Dns.GetHostEntryAsync(record.Content);
                         addresses = hostEntry.AddressList;
+                        break;
+                    }
+                    case DnsRecordType.Txt:
+                    {
+                        var sp = record.Content.Trim('"').Split(':');
+                        addresses = sp.First().ToUpper() == "A"
+                            ? [IPAddress.Parse(sp.Last())]
+                            : (await Dns.GetHostEntryAsync(sp.Last())).AddressList;
                         break;
                     }
                     case DnsRecordType.A:
