@@ -153,7 +153,8 @@ namespace ArashiDNS.Kyro
                 Type = bestRecord.Type,
                 Content = bestRecord.Content,
                 Ttl = bestRecord.Ttl,
-                Proxied = bestRecord.Proxied
+                Proxied = bestRecord.Proxied,
+                Comment = "LastUpdate:" + DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")
             };
 
             await client.Zones.DnsRecords.AddAsync(domainConfig.ZoneId, newRecord);
