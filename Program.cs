@@ -142,8 +142,8 @@ namespace ArashiDNS.Kyro
             var dnsRecords = (await client.Zones.DnsRecords.GetAsync(domainConfig.ZoneId,
                 new DnsRecordFilter() { Name = domainConfig.SubDomain })).Result;
             var mainRecord = dnsRecords
-                .FirstOrDefault(r => r.Name == domainConfig.SubDomain &&
-                                     r.Type is DnsRecordType.A or DnsRecordType.Cname);
+                .FirstOrDefault(r =>
+                    r.Name == domainConfig.SubDomain && r.Type is DnsRecordType.A or DnsRecordType.Cname);
 
             if (mainRecord != null &&
                 mainRecord.Content == bestRecord.Content &&
@@ -211,7 +211,7 @@ namespace ArashiDNS.Kyro
                 {
                     if (isIcmp
                             ? await ICMPing(addresses.First(), timeOut)
-                            : await Tcping(addresses.First(), port, timeOut))
+                            : await TCPing(addresses.First(), port, timeOut))
                         return true;
 
                     await Task.Delay(300);
@@ -225,7 +225,7 @@ namespace ArashiDNS.Kyro
             }
         }
 
-        static async Task<bool> Tcping(IPAddress ip, int port, int timeoutMs)
+        static async Task<bool> TCPing(IPAddress ip, int port, int timeoutMs)
         {
             try
             {
