@@ -113,7 +113,7 @@ namespace ArashiDNS.Kyro
             var accessibleRecords = new List<DnsRecord>();
             foreach (var record in haRecords)
             {
-                if (await IsRecordAccessible(record))
+                if (await IsRecordAccessible(record, domainConfig))
                 {
                     accessibleRecords.Add(record);
                     if (FullConfig.LogLevel < 1) Console.WriteLine($"  - ✓ {record.Name} ({record.Content}) UP");
@@ -173,11 +173,15 @@ namespace ArashiDNS.Kyro
             if (FullConfig.LogLevel < 2) Console.WriteLine($"    - Updated {domainConfig.SubDomain} : {bestRecord.Content} ({bestRecord.Type})");
         }
 
-        static async Task<bool> IsRecordAccessible(DnsRecord record)
+        static async Task<bool> IsRecordAccessible(DnsRecord record, DomainConfig domainConfig)
         {
             try
             {
                 IPAddress[] addresses;
+                var timeOut = domainConfig.Timeout ?? FullConfig.Timeout;
+                var port = domainConfig.CheckPort ?? FullConfig.CheckPort;
+                var retries = domainConfig.Retries ?? FullConfig.Retries;
+                var isIcmp = domainConfig.UseICMPing ?? FullConfig.UseICMPing;
 
                 switch (record.Type)
                 {
@@ -203,11 +207,11 @@ namespace ArashiDNS.Kyro
                 }
 
                 if (!addresses.Any()) return false;
-                for (var i = 0; i < FullConfig.Retries; i++)
+                for (var i = 0; i < retries; i++)
                 {
-                    if (FullConfig.UseICMPing
-                            ? await ICMPing(addresses.First(), FullConfig.Timeout)
-                            : await Tcping(addresses.First(), FullConfig.CheckPort, FullConfig.Timeout))
+                    if (isIcmp
+                            ? await ICMPing(addresses.First(), timeOut)
+                            : await Tcping(addresses.First(), port, timeOut))
                         return true;
 
                     await Task.Delay(300);
@@ -289,6 +293,11 @@ namespace ArashiDNS.Kyro
         public string? HADomain { get; set; } = string.Empty;
         public string SubDomain { get; set; }
         public string ZoneId { get; set; }
+        public int? Timeout { get; set; }
+        public int? CheckPort { get; set; }
+        public int? Retries { get; set; }
+        public bool? UseICMPing { get; set; }
+
     }
 
 }
