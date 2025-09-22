@@ -205,7 +205,9 @@ namespace ArashiDNS.Kyro
                 if (!addresses.Any()) return false;
                 for (var i = 0; i < FullConfig.Retries; i++)
                 {
-                    if (await Tcping(addresses.First(), FullConfig.CheckPort, FullConfig.Timeout))
+                    if (FullConfig.UseICMPing
+                            ? await ICMPing(addresses.First(), FullConfig.Timeout)
+                            : await Tcping(addresses.First(), FullConfig.CheckPort, FullConfig.Timeout))
                         return true;
 
                     await Task.Delay(300);
@@ -239,10 +241,10 @@ namespace ArashiDNS.Kyro
             }
         }
 
-        public static bool ICMPing(IPAddress ip, int timeoutMs)
+        public static async Task<bool> ICMPing(IPAddress ip, int timeoutMs)
         {
             var bufferBytes = Encoding.Default.GetBytes("abcdefghijklmnopqrstuvwabcdefghi");
-            return new Ping().Send(ip, timeoutMs, bufferBytes).Status == IPStatus.Success;
+            return (await new Ping().SendPingAsync(ip, timeoutMs, bufferBytes)).Status == IPStatus.Success;
         }
 
         public static async Task<string> GetGeoInfoAsync()
