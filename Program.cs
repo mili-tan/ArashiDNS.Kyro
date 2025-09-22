@@ -2,6 +2,7 @@
 using CloudFlare.Client.Api.Zones.DnsRecord;
 using CloudFlare.Client.Enumerators;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -100,8 +101,6 @@ namespace ArashiDNS.Kyro
                 ? $"_ha.{domainConfig.SubDomain}"
                 : domainConfig.HADomain;
 
-            var dnsRecords = (await client.Zones.DnsRecords.GetAsync(domainConfig.ZoneId,
-                new DnsRecordFilter() { Name = domainConfig.SubDomain })).Result;
             var haRecords = (await client.Zones.DnsRecords.GetAsync(domainConfig.ZoneId,
                 new DnsRecordFilter() {Name = haName})).Result.Where(x =>
                 x.Type is DnsRecordType.A or DnsRecordType.Cname or DnsRecordType.Txt);
@@ -140,6 +139,8 @@ namespace ArashiDNS.Kyro
                     Proxied = bestRecord.Proxied
                 };
 
+            var dnsRecords = (await client.Zones.DnsRecords.GetAsync(domainConfig.ZoneId,
+                new DnsRecordFilter() { Name = domainConfig.SubDomain })).Result;
             var mainRecord = dnsRecords
                 .FirstOrDefault(r => r.Name == domainConfig.SubDomain &&
                                      r.Type is DnsRecordType.A or DnsRecordType.Cname);
@@ -238,6 +239,12 @@ namespace ArashiDNS.Kyro
             }
         }
 
+        public static bool ICMPing(IPAddress ip, int timeoutMs)
+        {
+            var bufferBytes = Encoding.Default.GetBytes("abcdefghijklmnopqrstuvwabcdefghi");
+            return new Ping().Send(ip, timeoutMs, bufferBytes).Status == IPStatus.Success;
+        }
+
         public static async Task<string> GetGeoInfoAsync()
         {
             using var httpClient = new HttpClient();
@@ -271,6 +278,7 @@ namespace ArashiDNS.Kyro
         public int CheckPort { get; set; } = 80;
         public int Retries { get; set; } = 4;
         public int LogLevel { get; set; } = 0;
+        public bool UseICMPing { get; set; } = false;
         public List<DomainConfig> Domains { get; set; }
     }
 
