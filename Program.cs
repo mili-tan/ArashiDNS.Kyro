@@ -83,7 +83,7 @@ namespace ArashiDNS.Kyro
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error: {domainConfig.SubDomain}: {ex.Message}");
+                    Console.WriteLine($"Error: {domainConfig.SubDomain}: {ex.Message} {DateTime.Now}");
                 }
             }
 
