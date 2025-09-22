@@ -24,6 +24,17 @@ namespace ArashiDNS.Kyro
                 return;
             }
 
+            if (string.IsNullOrWhiteSpace(FullConfig.Node) || FullConfig.Node == "Unknown")
+                try
+                {
+                    FullConfig.Node = await GetGeoInfoAsync();
+                    Console.WriteLine("Node: " + FullConfig.Node);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+
             if (FullConfig.LogLevel < 2) Console.WriteLine(
                 $"Interval: {FullConfig.CheckInterval}ms, Timeout: {FullConfig.Timeout}ms, Port: {FullConfig.CheckPort}");
             await CheckAllDomains();
@@ -154,7 +165,7 @@ namespace ArashiDNS.Kyro
                 Content = bestRecord.Content,
                 Ttl = bestRecord.Ttl,
                 Proxied = bestRecord.Proxied,
-                Comment = "LastUpdate:" + DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")
+                Comment = $"LastUpdate@{DateTime.Now:yyyy-MM-ddTHH:mm:sszzz}@{FullConfig.Node}"
             };
 
             await client.Zones.DnsRecords.AddAsync(domainConfig.ZoneId, newRecord);
@@ -226,11 +237,35 @@ namespace ArashiDNS.Kyro
                 return false;
             }
         }
+
+        public static async Task<string> GetGeoInfoAsync()
+        {
+            using var httpClient = new HttpClient();
+            string json;
+            try
+            {
+                json = await httpClient.GetStringAsync("https://api.ip.sb/geoip");
+            }
+            catch (Exception)
+            {
+                json = await httpClient.GetStringAsync("https://myip.mili.one/json");
+            }
+            var doc = JsonDocument.Parse(json).RootElement;
+            var str = string.Empty;
+
+            str += doc.TryGetProperty("country_code", out var c) ? c + "," : "";
+            str += doc.TryGetProperty("region_code", out var r) ? r + "," : "";
+            str += doc.TryGetProperty("city", out var ct) ? ct + "," : "";
+            str += doc.TryGetProperty("asn", out var a) ? a : "";
+
+            return str;
+        }
     }
 
     public class Config
     {
         public string ApiToken { get; set; }
+        public string Node { get; set; } = "Unknown";
         public int CheckInterval { get; set; } = 60 * 1000; // 60s
         public int Timeout { get; set; } = 1000; // 1s
         public int CheckPort { get; set; } = 80;
@@ -245,4 +280,5 @@ namespace ArashiDNS.Kyro
         public string SubDomain { get; set; }
         public string ZoneId { get; set; }
     }
+
 }
