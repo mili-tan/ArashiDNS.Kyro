@@ -22,6 +22,18 @@ namespace ArashiDNS.Kyro
             if (FullConfig == null)
             {
                 Console.WriteLine("⛔ Load Config Failed");
+                await File.WriteAllTextAsync("config.example.json", JsonSerializer.Serialize(new Config()
+                {
+                    ApiToken = "your-api-token-here",
+                    Domains = new List<DomainConfig>()
+                    {
+                        new DomainConfig()
+                        {
+                            SubDomain = "sub.example.com",
+                            ZoneId = "zoneid-here"
+                        }
+                    }
+                }, new JsonSerializerOptions() { WriteIndented = true }));
                 return;
             }
 
@@ -292,7 +304,7 @@ namespace ArashiDNS.Kyro
     {
         public string? HADomain { get; set; } = string.Empty;
         public string SubDomain { get; set; }
-        public string ZoneId { get; set; }
+        public string ZoneId { get; set; } = string.Empty;
         public int? Timeout { get; set; }
         public int? CheckPort { get; set; }
         public int? Retries { get; set; }
