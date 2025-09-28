@@ -8,7 +8,7 @@
   "UseICMPing": false,
   "Domains": [
     {
-      "SubDomain": "x.ollama.party",
+      "SubDomain": "you-domain.example.com",
       "ZoneId": "your-zone-id"
     }
   ]
