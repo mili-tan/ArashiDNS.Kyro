@@ -312,7 +312,7 @@ namespace ArashiDNS.Kyro
         public string Node { get; set; } = "Unknown";
         public string DoH { get; set; } = "https://dns.pub/dns-query";
         public int CheckInterval { get; set; } = 60 * 1000; // 60s
-        public int Timeout { get; set; } = 1000; // 1s
+        public int Timeout { get; set; } = 3000; // 3s
         public int CheckPort { get; set; } = 80;
         public int Retries { get; set; } = 4;
         public int LogLevel { get; set; } = 0;
