@@ -183,7 +183,7 @@ namespace ArashiDNS.Kyro
             };
 
             await client.Zones.DnsRecords.AddAsync(domainConfig.ZoneId, newRecord);
-            if (FullConfig.LogLevel < 3) Console.WriteLine($"    - Updated {domainConfig.SubDomain} : {bestRecord.Content} ({bestRecord.Type})");
+            if (FullConfig.LogLevel < 3) Console.WriteLine($"    - Updated {domainConfig.SubDomain} : {bestRecord.Content} ({bestRecord.Type}) @ {DateTime.Now}");
         }
 
         static async Task<bool> IsRecordAccessible(DnsRecord record, DomainConfig domainConfig)
