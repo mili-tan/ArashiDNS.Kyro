@@ -26,15 +26,15 @@ namespace ArashiDNS.Kyro
                 await File.WriteAllTextAsync("config.example.json", JsonSerializer.Serialize(new Config()
                 {
                     ApiToken = "your-api-token-here",
-                    Domains = new List<DomainConfig>()
-                    {
-                        new DomainConfig()
+                    Domains =
+                    [
+                        new DomainConfig
                         {
                             SubDomain = "sub.example.com",
                             ZoneId = "zoneid-here"
                         }
-                    }
-                }, new JsonSerializerOptions() { WriteIndented = true }));
+                    ]
+                }, new JsonSerializerOptions() {WriteIndented = true}));
                 return;
             }
 
