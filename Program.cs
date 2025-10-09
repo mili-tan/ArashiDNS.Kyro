@@ -1,6 +1,7 @@
 ﻿using CloudFlare.Client;
 using CloudFlare.Client.Api.Zones.DnsRecord;
 using CloudFlare.Client.Enumerators;
+using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -199,8 +200,7 @@ namespace ArashiDNS.Kyro
                 {
                     case DnsRecordType.Cname:
                     {
-                        var hostEntry = await Dns.GetHostEntryAsync(record.Content);
-                        addresses = hostEntry.AddressList;
+                        addresses = await GetDnsIpAddresses(record.Content);
                         break;
                     }
                     case DnsRecordType.Txt:
@@ -208,7 +208,7 @@ namespace ArashiDNS.Kyro
                         var sp = record.Content.Trim('"').Split(':');
                         addresses = sp.First().ToUpper() == "A"
                             ? [IPAddress.Parse(sp.Last())]
-                            : (await Dns.GetHostEntryAsync(sp.Last())).AddressList;
+                            : await GetDnsIpAddresses(sp.Last());
                         break;
                     }
                     case DnsRecordType.A:
@@ -285,12 +285,32 @@ namespace ArashiDNS.Kyro
 
             return str;
         }
+
+        static async Task<IPAddress[]> GetDnsIpAddresses(string domain)
+        {
+            try
+            {
+                using var client = new HttpClient();
+                var response = await client.GetStringAsync($"{FullConfig.DoH}?name={domain}");
+
+                return JObject.Parse(response)["Answer"]!
+                    .Where(a => a["type"]?.Value<int>() == 1)
+                    .Select(a => IPAddress.Parse(a["data"]?.Value<string>() ?? "0.0.0.0"))
+                    .ToArray();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return (await Dns.GetHostEntryAsync(domain)).AddressList;
+            }
+        }
     }
 
     public class Config
     {
         public string ApiToken { get; set; }
         public string Node { get; set; } = "Unknown";
+        public string DoH { get; set; } = "https://dns.pub/dns-query";
         public int CheckInterval { get; set; } = 60 * 1000; // 60s
         public int Timeout { get; set; } = 1000; // 1s
         public int CheckPort { get; set; } = 80;
