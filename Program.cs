@@ -23,7 +23,7 @@ namespace ArashiDNS.Kyro
             if (FullConfig == null)
             {
                 Console.WriteLine("⛔ Load Config Failed");
-                await File.WriteAllTextAsync("config.example.json", JsonSerializer.Serialize(new Config()
+                await File.WriteAllTextAsync("config.example.json", JsonSerializer.Serialize(new Config
                 {
                     ApiToken = "your-api-token-here",
                     Domains =
@@ -34,7 +34,7 @@ namespace ArashiDNS.Kyro
                             ZoneId = "zoneid-here"
                         }
                     ]
-                }, new JsonSerializerOptions() {WriteIndented = true}));
+                }, new JsonSerializerOptions {WriteIndented = true}));
                 return;
             }
 
