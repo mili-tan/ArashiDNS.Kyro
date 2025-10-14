@@ -275,7 +275,7 @@ namespace ArashiDNS.Kyro
             }
             catch (Exception)
             {
-                json = await httpClient.GetStringAsync("https://myip.mili.one/json");
+                json = await httpClient.GetStringAsync("https://ip.ns.net.kg/json");
             }
             var doc = JsonDocument.Parse(json).RootElement;
             var str = string.Empty;
