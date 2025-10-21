@@ -223,9 +223,11 @@ namespace ArashiDNS.Kyro
                 if (!addresses.Any()) return false;
                 for (var i = 0; i < retries; i++)
                 {
-                    if (isIcmp
-                            ? await ICMPing(addresses.First(), timeOut)
-                            : await TCPing(addresses.First(), port, timeOut))
+                    if (((domainConfig.UseCurl ?? false) && !string.IsNullOrWhiteSpace(domainConfig.CheckUrl))
+                            ? await CurlPing(domainConfig.CheckUrl, timeOut, domainConfig.CurlAcceptCode ?? 200)
+                            : isIcmp
+                                ? await ICMPing(addresses.First(), timeOut)
+                                : await TCPing(addresses.First(), port, timeOut))
                         return true;
 
                     await Task.Delay(300);
@@ -263,6 +265,19 @@ namespace ArashiDNS.Kyro
         {
             var bufferBytes = Encoding.Default.GetBytes("abcdefghijklmnopqrstuvwabcdefghi");
             return (await new Ping().SendPingAsync(ip, timeoutMs, bufferBytes)).Status == IPStatus.Success;
+        }
+
+        public static async Task<bool> CurlPing(string checkUrl, int timeoutMs, int code = 200)
+        {
+            try
+            {
+                var response = await new HttpClient { Timeout = TimeSpan.FromMilliseconds(timeoutMs) }.GetAsync(checkUrl);
+                return response.IsSuccessStatusCode || (int) response.StatusCode == code;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public static async Task<string> GetGeoInfoAsync()
@@ -329,8 +344,11 @@ namespace ArashiDNS.Kyro
         public string ZoneId { get; set; } = string.Empty;
         public int? Timeout { get; set; }
         public int? CheckPort { get; set; }
+        public string? CheckUrl { get; set; }
         public int? Retries { get; set; }
         public bool? UseICMPing { get; set; }
+        public bool? UseCurl { get; set; }
+        public int? CurlAcceptCode { get; set; } = 200;
 
     }
 
