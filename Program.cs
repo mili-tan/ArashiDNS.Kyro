@@ -224,7 +224,8 @@ namespace ArashiDNS.Kyro
                 for (var i = 0; i < retries; i++)
                 {
                     if (((domainConfig.UseCurl ?? false) && !string.IsNullOrWhiteSpace(domainConfig.CheckUrl))
-                            ? await CurlPing(domainConfig.CheckUrl, timeOut, domainConfig.CurlAcceptCode ?? 200)
+                            ? await CurlPing(domainConfig.CheckUrl, timeOut, addresses.First(),
+                                domainConfig.CurlAcceptCode ?? 200)
                             : isIcmp
                                 ? await ICMPing(addresses.First(), timeOut)
                                 : await TCPing(addresses.First(), port, timeOut))
@@ -267,11 +268,16 @@ namespace ArashiDNS.Kyro
             return (await new Ping().SendPingAsync(ip, timeoutMs, bufferBytes)).Status == IPStatus.Success;
         }
 
-        public static async Task<bool> CurlPing(string checkUrl, int timeoutMs, int code = 200)
+        public static async Task<bool> CurlPing(string checkUrl, int timeoutMs, IPAddress ipAddress, int code = 200)
         {
             try
             {
-                var response = await new HttpClient { Timeout = TimeSpan.FromMilliseconds(timeoutMs) }.GetAsync(checkUrl);
+                var uri = new Uri(checkUrl);
+                var host = uri.Host;
+                var newUri = new UriBuilder(uri) {Host = ipAddress.ToString()}.Uri;
+                var response = await new HttpClient
+                        {Timeout = TimeSpan.FromMilliseconds(timeoutMs), DefaultRequestHeaders = {Host = host}}
+                    .GetAsync(newUri);
                 return response.IsSuccessStatusCode || (int) response.StatusCode == code;
             }
             catch
