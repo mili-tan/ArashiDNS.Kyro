@@ -193,11 +193,6 @@ namespace ArashiDNS.Kyro
             try
             {
                 IPAddress[] addresses;
-                var timeOut = domainConfig.Timeout ?? FullConfig.Timeout;
-                var port = domainConfig.CheckPort ?? FullConfig.CheckPort;
-                var retries = domainConfig.Retries ?? FullConfig.Retries;
-                var isIcmp = domainConfig.UseICMPing ?? FullConfig.UseICMPing;
-
                 switch (record.Type)
                 {
                     case DnsRecordType.Cname:
@@ -220,11 +215,19 @@ namespace ArashiDNS.Kyro
                         return false;
                 }
 
+                var timeOut = domainConfig.Timeout ?? FullConfig.Timeout;
+                var port = domainConfig.CheckPort ?? FullConfig.CheckPort;
+                var retries = domainConfig.Retries ?? FullConfig.Retries;
+                var isIcmp = domainConfig.UseICMPing ?? FullConfig.UseICMPing;
+                var uri = string.IsNullOrWhiteSpace(domainConfig.CheckUrl)
+                    ? new Uri($"http://{addresses.First()}:{port}")
+                    : new Uri(domainConfig.CheckUrl);
+
                 if (!addresses.Any()) return false;
                 for (var i = 0; i < retries; i++)
                 {
-                    if (((domainConfig.UseCurl ?? false) && !string.IsNullOrWhiteSpace(domainConfig.CheckUrl))
-                            ? await CurlPing(domainConfig.CheckUrl, timeOut, addresses.First(),
+                    if ((domainConfig.UseCurl ?? false)
+                            ? await CurlPing(uri, timeOut, addresses.First(),
                                 domainConfig.CurlAcceptCode ?? 200)
                             : isIcmp
                                 ? await ICMPing(addresses.First(), timeOut)
@@ -268,15 +271,13 @@ namespace ArashiDNS.Kyro
             return (await new Ping().SendPingAsync(ip, timeoutMs, bufferBytes)).Status == IPStatus.Success;
         }
 
-        public static async Task<bool> CurlPing(string checkUrl, int timeoutMs, IPAddress ipAddress, int code = 200)
+        public static async Task<bool> CurlPing(Uri uri, int timeoutMs, IPAddress ipAddress, int code = 200)
         {
             try
             {
-                var uri = new Uri(checkUrl);
-                var host = uri.Host;
                 var newUri = new UriBuilder(uri) {Host = ipAddress.ToString()}.Uri;
                 var response = await new HttpClient
-                        {Timeout = TimeSpan.FromMilliseconds(timeoutMs), DefaultRequestHeaders = {Host = host}}
+                        {Timeout = TimeSpan.FromMilliseconds(timeoutMs), DefaultRequestHeaders = {Host = uri.Host}}
                     .GetAsync(newUri);
                 return response.IsSuccessStatusCode || (int) response.StatusCode == code;
             }
