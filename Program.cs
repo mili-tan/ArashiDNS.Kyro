@@ -219,16 +219,17 @@ namespace ArashiDNS.Kyro
                 var port = domainConfig.CheckPort ?? FullConfig.CheckPort;
                 var retries = domainConfig.Retries ?? FullConfig.Retries;
                 var isIcmp = domainConfig.UseICMPing ?? FullConfig.UseICMPing;
-                var uri = string.IsNullOrWhiteSpace(domainConfig.CheckUrl)
-                    ? new Uri($"http://{addresses.First()}:{port}")
-                    : new Uri(domainConfig.CheckUrl);
 
                 if (!addresses.Any()) return false;
                 if (!FullConfig.CheckAllNode) addresses = [addresses.First()];
 
                 foreach (var address in addresses)
                 {
+                    var uri = string.IsNullOrWhiteSpace(domainConfig.CheckUrl)
+                        ? new Uri($"http://{address}:{port}")
+                        : new Uri(domainConfig.CheckUrl);
                     var count = 0;
+
                     for (var i = 0; i < retries; i++)
                     {
                         if (domainConfig.UseCurl ?? false
