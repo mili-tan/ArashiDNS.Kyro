@@ -224,40 +224,19 @@ namespace ArashiDNS.Kyro
                     : new Uri(domainConfig.CheckUrl);
 
                 if (!addresses.Any()) return false;
-                if (FullConfig.CheckAllNode)
-                {
-                    foreach (var address in addresses)
-                    {
-                        var count = 0;
-                        for (var i = 0; i < retries; i++)
-                        {
-                            if (domainConfig.UseCurl ?? false
-                                    ? await CurlPing(uri, timeOut, address,
-                                        domainConfig.CurlAcceptCode ?? 200)
-                                    : isIcmp
-                                        ? await ICMPing(address, timeOut)
-                                        : await TCPing(address, port, timeOut))
-                            {
-                                if (!FullConfig.CheckPacketLoss) return true;
-                                count++;
-                                if (count >= retries / 2) return true;
-                            }
+                if (!FullConfig.CheckAllNode) addresses = [addresses.First()];
 
-                            await Task.Delay(300);
-                        }
-                    }
-                }
-                else
+                foreach (var address in addresses)
                 {
                     var count = 0;
                     for (var i = 0; i < retries; i++)
                     {
                         if (domainConfig.UseCurl ?? false
-                                ? await CurlPing(uri, timeOut, addresses.First(),
+                                ? await CurlPing(uri, timeOut, address,
                                     domainConfig.CurlAcceptCode ?? 200)
                                 : isIcmp
-                                    ? await ICMPing(addresses.First(), timeOut)
-                                    : await TCPing(addresses.First(), port, timeOut))
+                                    ? await ICMPing(address, timeOut)
+                                    : await TCPing(address, port, timeOut))
                         {
                             if (!FullConfig.CheckPacketLoss) return true;
                             count++;
