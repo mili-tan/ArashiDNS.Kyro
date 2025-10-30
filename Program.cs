@@ -224,17 +224,48 @@ namespace ArashiDNS.Kyro
                     : new Uri(domainConfig.CheckUrl);
 
                 if (!addresses.Any()) return false;
-                for (var i = 0; i < retries; i++)
+                if (FullConfig.CheckAllNode)
                 {
-                    if ((domainConfig.UseCurl ?? false)
-                            ? await CurlPing(uri, timeOut, addresses.First(),
-                                domainConfig.CurlAcceptCode ?? 200)
-                            : isIcmp
-                                ? await ICMPing(addresses.First(), timeOut)
-                                : await TCPing(addresses.First(), port, timeOut))
-                        return true;
+                    foreach (var address in addresses)
+                    {
+                        var count = 0;
+                        for (var i = 0; i < retries; i++)
+                        {
+                            if (domainConfig.UseCurl ?? false
+                                    ? await CurlPing(uri, timeOut, address,
+                                        domainConfig.CurlAcceptCode ?? 200)
+                                    : isIcmp
+                                        ? await ICMPing(address, timeOut)
+                                        : await TCPing(address, port, timeOut))
+                            {
+                                if (!FullConfig.CheckPacketLoss) return true;
+                                count++;
+                                if (count >= retries / 2) return true;
+                            }
 
-                    await Task.Delay(300);
+                            await Task.Delay(300);
+                        }
+                    }
+                }
+                else
+                {
+                    var count = 0;
+                    for (var i = 0; i < retries; i++)
+                    {
+                        if (domainConfig.UseCurl ?? false
+                                ? await CurlPing(uri, timeOut, addresses.First(),
+                                    domainConfig.CurlAcceptCode ?? 200)
+                                : isIcmp
+                                    ? await ICMPing(addresses.First(), timeOut)
+                                    : await TCPing(addresses.First(), port, timeOut))
+                        {
+                            if (!FullConfig.CheckPacketLoss) return true;
+                            count++;
+                            if (count >= retries / 2) return true;
+                        }
+
+                        await Task.Delay(300);
+                    }
                 }
 
                 return false;
@@ -338,9 +369,11 @@ namespace ArashiDNS.Kyro
         public int CheckInterval { get; set; } = 60 * 1000; // 60s
         public int Timeout { get; set; } = 3000; // 3s
         public int CheckPort { get; set; } = 80;
-        public int Retries { get; set; } = 4;
+        public int Retries { get; set; } = 8;
         public int LogLevel { get; set; } = 0;
         public bool UseICMPing { get; set; } = false;
+        public bool CheckAllNode { get; set; } = false;
+        public bool CheckPacketLoss { get; set; } = false;
         public List<DomainConfig> Domains { get; set; }
     }
 
