@@ -19,7 +19,8 @@ namespace ArashiDNS.Kyro
 
         public void SetBearerToken(string token)
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            if (!string.IsNullOrWhiteSpace(token))
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
 
         public async Task<CreateMeasurementResponse?> CreateMeasurementAsync(MeasurementRequest request,
@@ -73,7 +74,6 @@ namespace ArashiDNS.Kyro
                 });
             }
 
-            // 创建测量请求
             var request = new MeasurementRequest
             {
                 Type = "ping",
@@ -86,20 +86,17 @@ namespace ArashiDNS.Kyro
                 InProgressUpdates = true
             };
 
-            // 创建测量
             var createResponse = await CreateMeasurementAsync(request, cancellationToken);
             if (createResponse != null)
             {
                 var measurementId = createResponse?.Id;
 
-                // 等待并获取结果
                 var startTime = DateTime.UtcNow;
                 while (DateTime.UtcNow - startTime < TimeSpan.FromSeconds(maxWaitSeconds))
                 {
                     var measurement = await GetMeasurementAsync(measurementId, cancellationToken);
                     if (measurement?.Status != "in-progress") return measurement;
 
-                    // 等待250毫秒后重试
                     await Task.Delay(250, cancellationToken);
                 }
             }
@@ -137,7 +134,6 @@ namespace ArashiDNS.Kyro
                 });
             }
 
-            // 创建测量请求
             var request = new MeasurementRequest
             {
                 Type = "ping",
@@ -152,13 +148,11 @@ namespace ArashiDNS.Kyro
                 InProgressUpdates = true
             };
 
-            // 创建测量
             var createResponse = await CreateMeasurementAsync(request, cancellationToken);
             if (createResponse != null)
             {
                 var measurementId = createResponse?.Id;
 
-                // 等待并获取结果
                 var startTime = DateTime.UtcNow;
                 while (DateTime.UtcNow - startTime < TimeSpan.FromSeconds(maxWaitSeconds))
                 {
