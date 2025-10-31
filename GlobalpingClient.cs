@@ -50,7 +50,7 @@ namespace ArashiDNS.Kyro
         /// 执行Ping测量并自动等待结果
         /// </summary>
         /// <param name="target">目标地址</param>
-        /// <param name="countries">国家代码列表</param>
+        /// <param name="locations">目标位置</param>
         /// <param name="limit">每个国家的探针数量限制</param>
         /// <param name="packets">数据包数量</param>
         /// <param name="maxWaitSeconds">最大等待时间（秒）</param>
@@ -58,22 +58,12 @@ namespace ArashiDNS.Kyro
         /// <returns>测量结果</returns>
         public async Task<MeasurementResponse?> PingWithCountriesAsync(
             string target,
-            List<string> countries,
+            List<MeasurementLocationOption> locations,
             int limit = 1,
             int packets = 3,
             int maxWaitSeconds = 30,
             CancellationToken cancellationToken = default)
         {
-            var locations = new List<MeasurementLocationOption>();
-            foreach (var country in countries)
-            {
-                locations.Add(new MeasurementLocationOption
-                {
-                    Country = country,
-                    Limit = limit
-                });
-            }
-
             var request = new MeasurementRequest
             {
                 Type = "ping",
@@ -108,7 +98,7 @@ namespace ArashiDNS.Kyro
         /// 执行TCPing测量并自动等待结果
         /// </summary>
         /// <param name="target">目标地址</param>
-        /// <param name="countries">国家代码列表</param>
+        /// <param name="locations">目标位置</param>
         /// <param name="port">端口</param>
         /// <param name="limit">每个国家的探针数量限制</param>
         /// <param name="packets">数据包数量</param>
@@ -117,23 +107,13 @@ namespace ArashiDNS.Kyro
         /// <returns>测量结果</returns>
         public async Task<MeasurementResponse?> TCPingWithCountriesAsync(
             string target,
-            List<string> countries,
+            List<MeasurementLocationOption> locations,
             int port = 80,
             int limit = 1,
             int packets = 3,
             int maxWaitSeconds = 30,
             CancellationToken cancellationToken = default)
         {
-            var locations = new List<MeasurementLocationOption>();
-            foreach (var country in countries)
-            {
-                locations.Add(new MeasurementLocationOption
-                {
-                    Country = country,
-                    Limit = limit
-                });
-            }
-
             var request = new MeasurementRequest
             {
                 Type = "ping",
@@ -194,7 +174,31 @@ namespace ArashiDNS.Kyro
     public class MeasurementLocationOption
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Continent { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Region { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string Country { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string State { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string City { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? Asn { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Network { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<string> Tags { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Magic { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public int? Limit { get; set; }

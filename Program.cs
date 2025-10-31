@@ -282,6 +282,20 @@ namespace ArashiDNS.Kyro
             return (await new Ping().SendPingAsync(ip, timeoutMs, bufferBytes)).Status == IPStatus.Success;
         }
 
+        public static async Task<PingStats> GolobalICMPing(IPAddress ip, int timeoutMs)
+        {
+            return (await new GlobalpingClient().PingWithCountriesAsync(ip.ToString(),
+                    [new MeasurementLocationOption() {Country = "CN"}]))!
+                .Results.First().Result.Stats;
+        }
+
+        public static async Task<PingStats> GolobalTCPing(IPAddress ip, int port, int timeoutMs)
+        {
+            return (await new GlobalpingClient().TCPingWithCountriesAsync(ip.ToString(),
+                    [new MeasurementLocationOption() {Country = "CN"}], port))!
+                .Results.First().Result.Stats;
+        }
+
         public static async Task<bool> CurlPing(Uri uri, int timeoutMs, IPAddress ipAddress, int code = 200)
         {
             try
