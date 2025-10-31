@@ -236,8 +236,14 @@ namespace ArashiDNS.Kyro
                         var res = isIcmp
                             ? await GlobalICMPing(address, timeOut)
                             : await GlobalTCPing(address, port, timeOut);
-                        if (!FullConfig.CheckPacketLoss) return res.First().Rcv != 0;
-                        return res.First().Loss >= 50;
+                        
+                        foreach (var stats in res)
+                        {
+                            if (stats.Rcv == 0) return false;
+                            if (FullConfig.CheckPacketLoss && stats.Loss > 50) return false;
+                        }
+
+                        return true;
                     }
 
                     for (var i = 0; i < retries; i++)
