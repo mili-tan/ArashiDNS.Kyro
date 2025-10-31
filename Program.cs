@@ -236,8 +236,8 @@ namespace ArashiDNS.Kyro
                         var res = isIcmp
                             ? await GlobalICMPing(address, timeOut)
                             : await GlobalTCPing(address, port, timeOut);
-                        if (!FullConfig.CheckPacketLoss) return res.Rcv != 0;
-                        return res.Loss >= 50;
+                        if (!FullConfig.CheckPacketLoss) return res.First().Rcv != 0;
+                        return res.First().Loss >= 50;
                     }
 
                     for (var i = 0; i < retries; i++)
@@ -292,18 +292,18 @@ namespace ArashiDNS.Kyro
             return (await new Ping().SendPingAsync(ip, timeoutMs, bufferBytes)).Status == IPStatus.Success;
         }
 
-        public static async Task<PingStats> GlobalICMPing(IPAddress ip, int timeoutMs)
+        public static async Task<PingStats[]> GlobalICMPing(IPAddress ip, int timeoutMs)
         {
             return (await new GlobalpingClient().PingWithCountriesAsync(ip.ToString(),
                     [new MeasurementLocationOption() {Country = "CN"}]))!
-                .Results.First().Result.Stats;
+                .Results.Select(x => x.Result.Stats).ToArray();
         }
 
-        public static async Task<PingStats> GlobalTCPing(IPAddress ip, int port, int timeoutMs)
+        public static async Task<PingStats[]> GlobalTCPing(IPAddress ip, int port, int timeoutMs)
         {
             return (await new GlobalpingClient().TCPingWithCountriesAsync(ip.ToString(),
                     [new MeasurementLocationOption() {Country = "CN"}], port))!
-                .Results.First().Result.Stats;
+                .Results.Select(x => x.Result.Stats).ToArray();
         }
 
         public static async Task<bool> CurlPing(Uri uri, int timeoutMs, IPAddress ipAddress, int code = 200)
