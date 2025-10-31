@@ -219,6 +219,7 @@ namespace ArashiDNS.Kyro
                 var port = domainConfig.CheckPort ?? FullConfig.CheckPort;
                 var retries = domainConfig.Retries ?? FullConfig.Retries;
                 var isIcmp = domainConfig.UseICMPing ?? FullConfig.UseICMPing;
+                var isGlobal = domainConfig.UseGlobalPing ?? FullConfig.UseGlobalPing;
 
                 if (!addresses.Any()) return false;
                 if (!FullConfig.CheckAllNode) addresses = [addresses.First()];
@@ -229,6 +230,15 @@ namespace ArashiDNS.Kyro
                         ? new Uri($"http://{address}:{port}")
                         : new Uri(domainConfig.CheckUrl);
                     var count = 0;
+
+                    if (isGlobal)
+                    {
+                        var res = isIcmp
+                            ? await GlobalICMPing(address, timeOut)
+                            : await GlobalTCPing(address, port, timeOut);
+                        if (!FullConfig.CheckPacketLoss) return res.Rcv != 0;
+                        return res.Loss >= 50;
+                    }
 
                     for (var i = 0; i < retries; i++)
                     {
@@ -282,14 +292,14 @@ namespace ArashiDNS.Kyro
             return (await new Ping().SendPingAsync(ip, timeoutMs, bufferBytes)).Status == IPStatus.Success;
         }
 
-        public static async Task<PingStats> GolobalICMPing(IPAddress ip, int timeoutMs)
+        public static async Task<PingStats> GlobalICMPing(IPAddress ip, int timeoutMs)
         {
             return (await new GlobalpingClient().PingWithCountriesAsync(ip.ToString(),
                     [new MeasurementLocationOption() {Country = "CN"}]))!
                 .Results.First().Result.Stats;
         }
 
-        public static async Task<PingStats> GolobalTCPing(IPAddress ip, int port, int timeoutMs)
+        public static async Task<PingStats> GlobalTCPing(IPAddress ip, int port, int timeoutMs)
         {
             return (await new GlobalpingClient().TCPingWithCountriesAsync(ip.ToString(),
                     [new MeasurementLocationOption() {Country = "CN"}], port))!
@@ -366,6 +376,7 @@ namespace ArashiDNS.Kyro
         public int Retries { get; set; } = 8;
         public int LogLevel { get; set; } = 0;
         public bool UseICMPing { get; set; } = false;
+        public bool UseGlobalPing { get; set; } = false;
         public bool CheckAllNode { get; set; } = false;
         public bool CheckPacketLoss { get; set; } = false;
         public List<DomainConfig> Domains { get; set; }
@@ -381,6 +392,7 @@ namespace ArashiDNS.Kyro
         public string? CheckUrl { get; set; }
         public int? Retries { get; set; }
         public bool? UseICMPing { get; set; }
+        public bool? UseGlobalPing { get; set; }
         public bool? UseCurl { get; set; }
         public int? CurlAcceptCode { get; set; } = 200;
 
