@@ -16,6 +16,28 @@ namespace ArashiDNS.Kyro
         public static Config FullConfig;
         public static Timer CheckTimer;
 
+        public static List<MeasurementLocationOption> LocationOptions = new()
+        {
+            new MeasurementLocationOption
+            {
+                Limit = 1,
+                Country = "CN",
+                Asn = 4837
+            },
+            new MeasurementLocationOption
+            {
+                Limit = 1,
+                Country = "CN",
+                Asn = 4134
+            },
+            new MeasurementLocationOption
+            {
+                Limit = 1,
+                Country = "CN",
+                Asn = 9808
+            }
+        };
+
         static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
@@ -300,15 +322,13 @@ namespace ArashiDNS.Kyro
 
         public static async Task<PingStats[]> GlobalICMPing(IPAddress ip, int timeoutMs)
         {
-            return (await new GlobalpingClient().PingWithCountriesAsync(ip.ToString(),
-                    [new MeasurementLocationOption() {Country = "CN"}]))!
+            return (await new GlobalpingClient().PingWithCountriesAsync(ip.ToString(), LocationOptions))!
                 .Results.Select(x => x.Result.Stats).ToArray();
         }
 
         public static async Task<PingStats[]> GlobalTCPing(IPAddress ip, int port, int timeoutMs)
         {
-            return (await new GlobalpingClient().TCPingWithCountriesAsync(ip.ToString(),
-                    [new MeasurementLocationOption() {Country = "CN"}], port))!
+            return (await new GlobalpingClient().TCPingWithCountriesAsync(ip.ToString(), LocationOptions, port))!
                 .Results.Select(x => x.Result.Stats).ToArray();
         }
 
