@@ -60,6 +60,12 @@ namespace ArashiDNS.Kyro
                 return;
             }
 
+            if (File.Exists("globalping.json")) LocationOptions = LoadGlobalPingConfig();
+            else if (File.Exists("globalping.example.json"))
+                await File.WriteAllTextAsync("globalping.example.json",
+                    JsonSerializer.Serialize(LocationOptions, new JsonSerializerOptions {WriteIndented = true}));
+
+
             if (string.IsNullOrWhiteSpace(FullConfig.Node) || FullConfig.Node == "Unknown")
                 try
                 {
@@ -98,6 +104,20 @@ namespace ArashiDNS.Kyro
             {
                 var json = File.ReadAllText("config.json");
                 return JsonSerializer.Deserialize<Config>(json);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠  Load Config Error: {ex.Message}");
+                return null;
+            }
+        }
+
+        static List<MeasurementLocationOption> LoadGlobalPingConfig()
+        {
+            try
+            {
+                var json = File.ReadAllText("globalping.json");
+                return JsonSerializer.Deserialize<List<MeasurementLocationOption>>(json);
             }
             catch (Exception ex)
             {
@@ -255,17 +275,25 @@ namespace ArashiDNS.Kyro
 
                     if (isGlobal)
                     {
-                        var res = isIcmp
-                            ? await GlobalICMPing(address, timeOut)
-                            : await GlobalTCPing(address, port, timeOut);
-                        
-                        foreach (var stats in res)
+                        try
                         {
-                            if (stats.Rcv == 0) return false;
-                            if (FullConfig.CheckPacketLoss && stats.Loss > 50) return false;
-                        }
+                            var res = isIcmp
+                                ? await GlobalICMPing(address, timeOut)
+                                : await GlobalTCPing(address, port, timeOut);
 
-                        return true;
+                            foreach (var stats in res)
+                            {
+                                if (stats.Rcv == 0) return false;
+                                if (FullConfig.CheckPacketLoss && stats.Loss > 50) return false;
+                            }
+
+                            return true;
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e.Message);
+                            throw;
+                        }
                     }
 
                     for (var i = 0; i < retries; i++)

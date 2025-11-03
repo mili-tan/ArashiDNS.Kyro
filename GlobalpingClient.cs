@@ -61,7 +61,7 @@ namespace ArashiDNS.Kyro
             List<MeasurementLocationOption> locations,
             int limit = 1,
             int packets = 3,
-            int maxWaitSeconds = 30,
+            int maxWaitSeconds = 90,
             CancellationToken cancellationToken = default)
         {
             var request = new MeasurementRequest
@@ -111,7 +111,7 @@ namespace ArashiDNS.Kyro
             int port = 80,
             int limit = 1,
             int packets = 3,
-            int maxWaitSeconds = 30,
+            int maxWaitSeconds = 90,
             CancellationToken cancellationToken = default)
         {
             var request = new MeasurementRequest
