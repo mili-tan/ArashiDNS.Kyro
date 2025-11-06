@@ -16,6 +16,8 @@ namespace ArashiDNS.Kyro
         public static Config FullConfig;
         public static Timer CheckTimer;
 
+        public static string? GlobalpingToken = string.Empty;
+
         public static List<MeasurementLocationOption> LocationOptions = new()
         {
             new MeasurementLocationOption
@@ -65,6 +67,10 @@ namespace ArashiDNS.Kyro
                 await File.WriteAllTextAsync("globalping.example.json",
                     JsonSerializer.Serialize(LocationOptions, new JsonSerializerOptions {WriteIndented = true}));
 
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("GLOBALPING_TOKEN")))
+                GlobalpingToken = Environment.GetEnvironmentVariable("GLOBALPING_TOKEN")?.Trim();
+            if (File.Exists("globalping.token"))
+                GlobalpingToken = (await File.ReadAllTextAsync("globalping.token")).Trim();
 
             if (string.IsNullOrWhiteSpace(FullConfig.Node) || FullConfig.Node == "Unknown")
                 try
@@ -350,13 +356,15 @@ namespace ArashiDNS.Kyro
 
         public static async Task<PingStats[]> GlobalICMPing(IPAddress ip, int timeoutMs)
         {
-            return (await new GlobalpingClient().PingWithCountriesAsync(ip.ToString(), LocationOptions))!
+            return (await new GlobalpingClient(token: GlobalpingToken)
+                    .PingWithCountriesAsync(ip.ToString(), LocationOptions))!
                 .Results.Select(x => x.Result.Stats).ToArray();
         }
 
         public static async Task<PingStats[]> GlobalTCPing(IPAddress ip, int port, int timeoutMs)
         {
-            return (await new GlobalpingClient().TCPingWithCountriesAsync(ip.ToString(), LocationOptions, port))!
+            return (await new GlobalpingClient(token: GlobalpingToken)
+                    .TCPingWithCountriesAsync(ip.ToString(), LocationOptions, port))!
                 .Results.Select(x => x.Result.Stats).ToArray();
         }
 

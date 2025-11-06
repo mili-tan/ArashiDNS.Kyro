@@ -10,11 +10,13 @@ namespace ArashiDNS.Kyro
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl = "https://api.globalping.io";
 
-        public GlobalpingClient(HttpClient? httpClient = null)
+        public GlobalpingClient(HttpClient? httpClient = null, string? token = null)
         {
             _httpClient = httpClient ?? new HttpClient();
             _httpClient.BaseAddress = new Uri(_baseUrl);
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("ArashiDNS.Kyro/0.1");
+            if (!string.IsNullOrWhiteSpace(token))
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
 
         public void SetBearerToken(string token)
