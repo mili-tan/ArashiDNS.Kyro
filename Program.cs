@@ -24,20 +24,32 @@ namespace ArashiDNS.Kyro
             {
                 Limit = 1,
                 Country = "CN",
-                Asn = 4837
+                Asn = 4837 //CU
             },
             new MeasurementLocationOption
             {
                 Limit = 1,
                 Country = "CN",
-                Asn = 4134
+                Asn = 4134 //CT
             },
             new MeasurementLocationOption
             {
                 Limit = 1,
                 Country = "CN",
-                Asn = 9808
-            }
+                Asn = 9808 //CM
+            },
+            //new MeasurementLocationOption
+            //{
+            //    Limit = 1,
+            //    Country = "CN",
+            //    Asn = 37963 //Aliyun
+            //},
+            //new MeasurementLocationOption
+            //{
+            //    Limit = 1,
+            //    Country = "CN",
+            //    Asn = 45090 //Tencent
+            //},
         };
 
         static async Task Main(string[] args)
