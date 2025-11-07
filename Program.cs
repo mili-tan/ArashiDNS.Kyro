@@ -13,8 +13,8 @@ namespace ArashiDNS.Kyro
 {
     class Program
     {
-        public static Config FullConfig;
-        public static Timer CheckTimer;
+        public static Config? FullConfig;
+        public static Timer? CheckTimer;
 
         public static string? GlobalpingToken = string.Empty;
 
