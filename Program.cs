@@ -148,38 +148,26 @@ namespace ArashiDNS.Kyro
         {
             if (FullConfig.LogLevel < 2) Console.WriteLine($"\n=== Health Check Start {DateTime.Now} ===");
 
-            if (true)
-            {
-                await Parallel.ForEachAsync(FullConfig.Domains, async (domainConfig, _) =>
-                {
-                    try
-                    {
-                        await ProcessDomain(domainConfig);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error: {domainConfig.SubDomain}: {ex.Message} {DateTime.Now}");
-                    }
-                });
-            }
+            if (FullConfig.UseParallel)
+                await Parallel.ForEachAsync(FullConfig.Domains, CheckDomain);
             else
-            {
                 foreach (var domainConfig in FullConfig.Domains)
-                {
-                    try
-                    {
-                        await ProcessDomain(domainConfig);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error: {domainConfig.SubDomain}: {ex.Message} {DateTime.Now}");
-                    }
-                }
-            }
+                    await CheckDomain(domainConfig, new CancellationToken(false));
 
             if (FullConfig.LogLevel < 1) Console.WriteLine($"=== Health Check End {DateTime.Now} ===\n");
         }
 
+        private static async ValueTask CheckDomain(DomainConfig domainConfig, CancellationToken _)
+        {
+            try
+            {
+                await ProcessDomain(domainConfig);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {domainConfig.SubDomain}: {ex.Message} {DateTime.Now}");
+            }
+        }
 
         static async Task ProcessDomain(DomainConfig domainConfig)
         {
@@ -479,6 +467,7 @@ namespace ArashiDNS.Kyro
         public int LogLevel { get; set; } = 0;
         public bool UseICMPing { get; set; } = false;
         public bool UseGlobalPing { get; set; } = false;
+        public bool UseParallel { get; set; } = false;
         public bool CheckAllNode { get; set; } = false;
         public bool CheckPacketLoss { get; set; } = false;
         public List<DomainConfig> Domains { get; set; }
