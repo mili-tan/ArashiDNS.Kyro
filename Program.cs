@@ -148,15 +148,32 @@ namespace ArashiDNS.Kyro
         {
             if (FullConfig.LogLevel < 2) Console.WriteLine($"\n=== Health Check Start {DateTime.Now} ===");
 
-            foreach (var domainConfig in FullConfig.Domains)
+            if (true)
             {
-                try
+                await Parallel.ForEachAsync(FullConfig.Domains, async (domainConfig, _) =>
                 {
-                    await ProcessDomain(domainConfig);
-                }
-                catch (Exception ex)
+                    try
+                    {
+                        await ProcessDomain(domainConfig);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error: {domainConfig.SubDomain}: {ex.Message} {DateTime.Now}");
+                    }
+                });
+            }
+            else
+            {
+                foreach (var domainConfig in FullConfig.Domains)
                 {
-                    Console.WriteLine($"Error: {domainConfig.SubDomain}: {ex.Message} {DateTime.Now}");
+                    try
+                    {
+                        await ProcessDomain(domainConfig);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error: {domainConfig.SubDomain}: {ex.Message} {DateTime.Now}");
+                    }
                 }
             }
 
@@ -167,7 +184,7 @@ namespace ArashiDNS.Kyro
         static async Task ProcessDomain(DomainConfig domainConfig)
         {
             if (string.IsNullOrWhiteSpace(domainConfig.SubDomain)) return;
-            if (FullConfig.LogLevel < 2) Console.WriteLine($"- Check: {domainConfig.SubDomain}");
+            if (FullConfig.LogLevel < 2) Console.WriteLine($"{domainConfig.SubDomain,-28}: Checking");
 
             var client = new CloudFlareClient(FullConfig.ApiToken);
             var haName = string.IsNullOrWhiteSpace(domainConfig.HADomain)
@@ -179,7 +196,9 @@ namespace ArashiDNS.Kyro
                 x.Type is DnsRecordType.A or DnsRecordType.Cname or DnsRecordType.Txt);
             if (!haRecords.Any())
             {
-                Console.WriteLine($"    ⚠  HA NotFound: {haName} / {domainConfig.SubDomain}");
+                //Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine($"{domainConfig.SubDomain,-28}: ⚠  HA NotFound: {haName}");
+                //Console.ResetColor();
                 return;
             }
 
@@ -189,14 +208,23 @@ namespace ArashiDNS.Kyro
                 if (await IsRecordAccessible(record, domainConfig))
                 {
                     accessibleRecords.Add(record);
-                    if (FullConfig.LogLevel < 1) Console.WriteLine($"  - ✓ {record.Name} ({record.Content}) UP");
+                    //Console.ForegroundColor = ConsoleColor.DarkGreen;
+                    if (FullConfig.LogLevel < 1) Console.WriteLine($"{domainConfig.SubDomain,-28}: ✓ {record.Name,-30} [{record.Content,-40}] UP");
+                    //Console.ResetColor();
                 }
-                else if (FullConfig.LogLevel < 1) Console.WriteLine($"  - ✗ {record.Name} ({record.Content}) DOWN");
+                else if (FullConfig.LogLevel < 1)
+                {
+                    //Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    Console.WriteLine($"{domainConfig.SubDomain,-28}: ✗ {record.Name,-30} [{record.Content,-40}] DOWN");
+                    //Console.ResetColor();
+                }
             }
 
             if (!accessibleRecords.Any())
             {
-                Console.WriteLine($"    ⚠  No Accessible HA: {haName} / {domainConfig.SubDomain}");
+                //Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine($"{domainConfig.SubDomain,-28}: ⚠  No Accessible HA: {haName}");
+                //Console.ResetColor();
                 return;
             }
 
@@ -222,14 +250,14 @@ namespace ArashiDNS.Kyro
                 mainRecord.Content == bestRecord.Content &&
                 mainRecord.Type == bestRecord.Type)
             {
-                if (FullConfig.LogLevel < 2) Console.WriteLine($"    No Update Needed : {domainConfig.SubDomain} / {bestRecord.Content}");
+                if (FullConfig.LogLevel < 2) Console.WriteLine($"{domainConfig.SubDomain,-28}: No Update Needed / {bestRecord.Content}");
                 return;
             }
 
             if (mainRecord != null)
             {
                 await client.Zones.DnsRecords.DeleteAsync(domainConfig.ZoneId, mainRecord.Id);
-                if (FullConfig.LogLevel < 1) Console.WriteLine($"    - Deleted Old Record : {domainConfig.SubDomain}");
+                if (FullConfig.LogLevel < 1) Console.WriteLine($"{domainConfig.SubDomain,-28}: Deleted Old Record ");
             }
 
             var newRecord = new NewDnsRecord()
@@ -245,7 +273,7 @@ namespace ArashiDNS.Kyro
             await client.Zones.DnsRecords.AddAsync(domainConfig.ZoneId, newRecord);
             if (FullConfig.LogLevel < 3)
                 Console.WriteLine(
-                    $"    - Updated {domainConfig.SubDomain} : {bestRecord.Content} ({bestRecord.Type}) @ {DateTime.Now}");
+                    $"{domainConfig.SubDomain,-28}: Updated / {bestRecord.Content} ({bestRecord.Type}) @ {DateTime.Now}");
         }
 
         static async Task<bool> IsRecordAccessible(DnsRecord record, DomainConfig domainConfig)
