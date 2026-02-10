@@ -61,13 +61,13 @@ namespace ArashiDNS.Kyro
                 Console.WriteLine("⛔ Load Config Failed");
                 await File.WriteAllTextAsync("config.example.json", JsonSerializer.Serialize(new Config
                 {
-                    ApiToken = "your-api-token-here",
+                    ApiToken = "YOUR-API-TOKEN-HERE",
                     Domains =
                     [
                         new DomainConfig
                         {
                             SubDomain = "sub.example.com",
-                            ZoneId = "zoneid-here"
+                            ZoneId = "ZONE-ID-HERE"
                         }
                     ]
                 }, new JsonSerializerOptions {WriteIndented = true}));
