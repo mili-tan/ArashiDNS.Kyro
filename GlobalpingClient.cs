@@ -28,14 +28,11 @@ namespace ArashiDNS.Kyro
         public async Task<CreateMeasurementResponse?> CreateMeasurementAsync(MeasurementRequest request,
             CancellationToken cancellationToken = default)
         {
-            var json = JsonSerializer.Serialize(request, JsonOptions);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
+            var content = new StringContent(JsonSerializer.Serialize(request, JsonOptions), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync("/v1/measurements", content, cancellationToken);
             response.EnsureSuccessStatusCode();
 
-            var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
-            return JsonSerializer.Deserialize<CreateMeasurementResponse>(responseJson, JsonOptions);
+            return JsonSerializer.Deserialize<CreateMeasurementResponse>(await response.Content.ReadAsStringAsync(cancellationToken), JsonOptions);
         }
 
         public async Task<MeasurementResponse?> GetMeasurementAsync(string id,
@@ -44,8 +41,7 @@ namespace ArashiDNS.Kyro
             var response = await _httpClient.GetAsync($"/v1/measurements/{id}", cancellationToken);
             response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadAsStringAsync(cancellationToken);
-            return JsonSerializer.Deserialize<MeasurementResponse>(json, JsonOptions);
+            return JsonSerializer.Deserialize<MeasurementResponse>(await response.Content.ReadAsStringAsync(cancellationToken), JsonOptions);
         }
 
         /// <summary>
