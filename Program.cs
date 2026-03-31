@@ -190,6 +190,20 @@ namespace ArashiDNS.Kyro
                 return;
             }
 
+            if ((domainConfig.UseCurrentFirst ?? false) || (FullConfig.UseCurrentFirst ?? false))
+            {
+                var currentRecord = (await client.Zones.DnsRecords.GetAsync(domainConfig.ZoneId,
+                        new DnsRecordFilter() {Name = haName})).Result
+                    .First(x => x.Type is DnsRecordType.A or DnsRecordType.Cname);
+                if (currentRecord != null && await IsRecordAccessible(currentRecord, domainConfig))
+                {
+                    if (FullConfig.LogLevel < 1)
+                        Console.WriteLine(
+                            $"{domainConfig.SubDomain,-28}: ✓ Current Record is Accessible [{currentRecord.Content}]");
+                    return;
+                }
+            }
+
             var accessibleRecords = new List<DnsRecord>();
             foreach (var record in haRecords)
             {
@@ -470,6 +484,7 @@ namespace ArashiDNS.Kyro
         public bool UseParallel { get; set; } = false;
         public bool CheckAllNode { get; set; } = false;
         public bool CheckPacketLoss { get; set; } = false;
+        public bool? UseCurrentFirst { get; set; }
         public List<DomainConfig> Domains { get; set; }
     }
 
@@ -485,6 +500,7 @@ namespace ArashiDNS.Kyro
         public bool? UseICMPing { get; set; }
         public bool? UseGlobalPing { get; set; }
         public bool? UseCurl { get; set; }
+        public bool? UseCurrentFirst { get; set; }
         public int? CurlAcceptCode { get; set; } = 200;
 
     }
