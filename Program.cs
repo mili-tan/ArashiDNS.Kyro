@@ -176,7 +176,7 @@ namespace ArashiDNS.Kyro
 
             var client = new CloudFlareClient(FullConfig.ApiToken);
             var haName = string.IsNullOrWhiteSpace(domainConfig.HADomain)
-                ? $"_ha.{domainConfig.SubDomain}"
+                ? $"{FullConfig.HaPrefix}.{domainConfig.SubDomain}"
                 : domainConfig.HADomain;
 
             var haRecords = (await client.Zones.DnsRecords.GetAsync(domainConfig.ZoneId,
@@ -472,6 +472,7 @@ namespace ArashiDNS.Kyro
     public class Config
     {
         public string ApiToken { get; set; }
+        public string HaPrefix { get; set; } = "_ha";
         public string Node { get; set; } = "Unknown";
         public string DoH { get; set; } = "https://dns.pub/dns-query";
         public int CheckInterval { get; set; } = 60 * 1000; // 60s
