@@ -331,8 +331,12 @@ namespace ArashiDNS.Kyro
 
                             foreach (var stats in res)
                             {
-                                if (stats.Rcv == 0) return false;
-                                if (FullConfig.CheckPacketLoss && stats.Loss > 100 - (100 * FullConfig.PacketLossRatio))
+                                if (FullConfig.LogLevel < 3)
+                                    Console.WriteLine(
+                                        $"{domainConfig.SubDomain,-28}: from {stats.probe.Country}/{stats.probe.Asn} - Rcv: {stats.stats.Rcv}, Loss: {stats.stats.Loss}%");
+                                if (stats.stats.Rcv == 0) return false;
+                                if (FullConfig.CheckPacketLoss &&
+                                    stats.stats.Loss > 100 - (100 * FullConfig.PacketLossRatio))
                                     return false;
                             }
 
@@ -397,18 +401,19 @@ namespace ArashiDNS.Kyro
             return (await new Ping().SendPingAsync(ip, timeoutMs, bufferBytes)).Status == IPStatus.Success;
         }
 
-        public static async Task<PingStats[]> GlobalICMPing(IPAddress ip, int timeoutMs)
+        public static async Task<(PingStats stats, ResultProbe probe)[]> GlobalICMPing(IPAddress ip, int timeoutMs)
         {
             return (await new GlobalpingClient(token: GlobalpingToken)
                     .PingWithCountriesAsync(ip.ToString(), LocationOptions))!
-                .Results.Select(x => x.Result.Stats).ToArray();
+                .Results.Select(x => (x.Result.Stats, x.Probe)).ToArray();
         }
 
-        public static async Task<PingStats[]> GlobalTCPing(IPAddress ip, int port, int timeoutMs)
+        public static async Task<(PingStats stats, ResultProbe probe)[]> GlobalTCPing(IPAddress ip, int port,
+            int timeoutMs)
         {
             return (await new GlobalpingClient(token: GlobalpingToken)
                     .TCPingWithCountriesAsync(ip.ToString(), LocationOptions, port))!
-                .Results.Select(x => x.Result.Stats).ToArray();
+                .Results.Select(x => (x.Result.Stats, x.Probe)).ToArray();
         }
 
         public static async Task<bool> CurlPing(Uri uri, int timeoutMs, IPAddress ipAddress, int code = 200)
