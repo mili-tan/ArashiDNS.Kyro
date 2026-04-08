@@ -329,14 +329,14 @@ namespace ArashiDNS.Kyro
                                 ? await GlobalICMPing(address, timeOut)
                                 : await GlobalTCPing(address, port, timeOut);
 
-                            foreach (var stats in res)
+                            foreach (var item in res)
                             {
                                 if (FullConfig.LogLevel < 3)
                                     Console.WriteLine(
-                                        $"{domainConfig.SubDomain,-28}: from {stats.probe.Country}/{stats.probe.Asn} - Rcv: {stats.stats.Rcv}, Loss: {stats.stats.Loss}%");
-                                if (stats.stats.Rcv == 0) return false;
+                                        $"{domainConfig.SubDomain,-28}: from {item.probe.Country}/{item.probe.Asn} - Rcv: {item.stats.Rcv}, Loss: {item.stats.Loss}%");
+                                if (item.stats.Rcv == 0) return false;
                                 if (FullConfig.CheckPacketLoss &&
-                                    stats.stats.Loss > 100 - (100 * FullConfig.PacketLossRatio))
+                                    item.stats.Loss > 100 - (100 * FullConfig.PacketLossRatio))
                                     return false;
                             }
 
