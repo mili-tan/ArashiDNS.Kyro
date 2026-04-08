@@ -332,7 +332,7 @@ namespace ArashiDNS.Kyro
                             foreach (var stats in res)
                             {
                                 if (stats.Rcv == 0) return false;
-                                if (FullConfig.CheckPacketLoss && stats.Loss > 100 * FullConfig.PacketLossRatio)
+                                if (FullConfig.CheckPacketLoss && stats.Loss > 100 - (100 * FullConfig.PacketLossRatio))
                                     return false;
                             }
 
