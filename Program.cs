@@ -332,7 +332,8 @@ namespace ArashiDNS.Kyro
                             foreach (var stats in res)
                             {
                                 if (stats.Rcv == 0) return false;
-                                if (FullConfig.CheckPacketLoss && stats.Loss > 50) return false;
+                                if (FullConfig.CheckPacketLoss && stats.Loss > 100 * FullConfig.PacketLossRatio)
+                                    return false;
                             }
 
                             return true;
@@ -355,7 +356,7 @@ namespace ArashiDNS.Kyro
                         {
                             if (!FullConfig.CheckPacketLoss) return true;
                             count++;
-                            if (count >= retries / 2) return true;
+                            if (count >= retries * FullConfig.PacketLossRatio) return true;
                         }
 
                         await Task.Delay(300);
@@ -479,13 +480,13 @@ namespace ArashiDNS.Kyro
         public int Timeout { get; set; } = 3000; // 3s
         public int CheckPort { get; set; } = 80;
         public int Retries { get; set; } = 10;
-        public double PacketLossRatio { get; set; } = 0.8;
         public int LogLevel { get; set; } = 0;
         public bool UseICMPing { get; set; } = false;
         public bool UseGlobalPing { get; set; } = false;
         public bool UseParallel { get; set; } = false;
         public bool CheckAllNode { get; set; } = false;
         public bool CheckPacketLoss { get; set; } = false;
+        public double PacketLossRatio { get; set; } = 0.8;
         public bool? UseCurrentFirst { get; set; }
         public List<DomainConfig> Domains { get; set; }
     }
