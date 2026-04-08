@@ -478,7 +478,8 @@ namespace ArashiDNS.Kyro
         public int CheckInterval { get; set; } = 60 * 1000; // 60s
         public int Timeout { get; set; } = 3000; // 3s
         public int CheckPort { get; set; } = 80;
-        public int Retries { get; set; } = 8;
+        public int Retries { get; set; } = 10;
+        public double PacketLossRatio { get; set; } = 0.8;
         public int LogLevel { get; set; } = 0;
         public bool UseICMPing { get; set; } = false;
         public bool UseGlobalPing { get; set; } = false;
