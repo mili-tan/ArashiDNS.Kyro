@@ -267,7 +267,7 @@ namespace ArashiDNS.Kyro
                 Name = domainConfig.SubDomain,
                 Type = bestRecord.Type,
                 Content = bestRecord.Content,
-                Ttl = bestRecord.Ttl,
+                Ttl = domainConfig.DefaultTTL ?? FullConfig.DefaultTTL ?? bestRecord.Ttl,
                 Proxied = bestRecord.Proxied,
                 Comment = $"LastUpdate@{DateTime.Now:yyyy-MM-ddTHH:mm:sszzz}@{FullConfig.Node}"
             };
@@ -483,6 +483,7 @@ namespace ArashiDNS.Kyro
         public string DoH { get; set; } = "https://dns.pub/dns-query";
         public int CheckInterval { get; set; } = 60 * 1000; // 60s
         public int Timeout { get; set; } = 3000; // 3s
+        public int? DefaultTTL { get; set; } = null;
         public int CheckPort { get; set; } = 80;
         public int Retries { get; set; } = 10;
         public int LogLevel { get; set; } = 0;
@@ -510,6 +511,7 @@ namespace ArashiDNS.Kyro
         public bool? UseCurl { get; set; }
         public bool? UseCurrentFirst { get; set; }
         public int? CurlAcceptCode { get; set; } = 200;
+        public int? DefaultTTL { get; set; } = null;
 
     }
 
