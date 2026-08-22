@@ -317,7 +317,8 @@ namespace ArashiDNS.Kyro
                 foreach (var address in addresses)
                 {
                     var uri = string.IsNullOrWhiteSpace(domainConfig.CheckUrl)
-                        ? new Uri($"http://{address}:{port}")
+                        //? new Uri($"http://{address}:{port}")
+                        ? new Uri($"http://{(FullConfig.UseCurlOnlyIp ? address : domainConfig.SubDomain)}:{port}")
                         : new Uri(domainConfig.CheckUrl);
                     var count = 0;
 
@@ -490,6 +491,7 @@ namespace ArashiDNS.Kyro
         public bool UseICMPing { get; set; } = false;
         public bool UseGlobalPing { get; set; } = false;
         public bool UseParallel { get; set; } = false;
+        public bool UseCurlOnlyIp { get; set; } = false;
         public bool CheckAllNode { get; set; } = false;
         public bool CheckPacketLoss { get; set; } = false;
         public double PacketLossRatio { get; set; } = 0.8;
