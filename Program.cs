@@ -425,10 +425,17 @@ namespace ArashiDNS.Kyro
                 var response = await new HttpClient
                         {Timeout = TimeSpan.FromMilliseconds(timeoutMs), DefaultRequestHeaders = {Host = uri.Host}}
                     .GetAsync(newUri);
+                //if (!response.IsSuccessStatusCode && (int) response.StatusCode != code)
+                //{
+                //    Console.WriteLine(uri);
+                //    Console.WriteLine(response.StatusCode);
+                //}
+
                 return response.IsSuccessStatusCode || (int) response.StatusCode == code;
             }
-            catch
+            catch (Exception e)
             {
+                //Console.WriteLine(e.Message);
                 return false;
             }
         }
